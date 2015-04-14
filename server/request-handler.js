@@ -44,29 +44,29 @@ var requestHandler = exports.requestHandler =  function(request, response) {
   var headers = defaultCorsHeaders;
   if (request.method==="GET"){
     statusCode=200;
-    if(request.url === ''){
-
-
-    } else if(request.url === '/classes/messages'){
-      headers['Content-Type'] = "text/JSON";
-      response.writeHead(statusCode, headers);
-      //console.log("it is expecting: " + JSON.stringify(messages));
-      response.end(JSON.stringify(messages));
-    } else if(request.url === '/classes/room1'){
-      headers['Content-Type'] = "text/JSON";
-      response.writeHead(statusCode, headers);
-      response.end(JSON.stringify(messages))
-    } else{
-      statusCode=404;
-      headers['Content-Type'] = "text/plain";
-      response.writeHead(statusCode, headers);
-      response.end(JSON.stringify(messages))
-    }
+    if(request.url === '/classes/messages'){
+        headers['Content-Type'] = "text/JSON";
+        response.writeHead(statusCode, headers);
+        //console.log("it is expecting: " + JSON.stringify(messages));
+        response.end(JSON.stringify(messages));
+        //REFACTOR FOR OTHER ROOMS
+      } else if(request.url === '/classes/room1'){
+        headers['Content-Type'] = "text/JSON";
+        response.writeHead(statusCode, headers);
+        //console.log("MESSAGES.RESULTS.LENGTH"+messages.results.length);
+        response.end(JSON.stringify(messages))
+      } else{
+        statusCode=404;
+        headers['Content-Type'] = "text/plain";
+        response.writeHead(statusCode, headers);
+        response.end(JSON.stringify(messages))
+      }
   } else if (request.method==="POST"){
     console.log("I GOT HERE1");
     statusCode=201;
     var messageReceived = '';
     if(request.url === ''){
+
     } else if(request.url === '/classes/messages'){
       request.on('data', function(chunk){
         messageReceived += chunk;
@@ -76,7 +76,7 @@ var requestHandler = exports.requestHandler =  function(request, response) {
         headers['Content-Type'] = "text/plain";
         response.writeHead(statusCode, headers);
         // console.log(response);
-        response.write(JSON.stringify(messages))
+        //response.write(JSON.stringify(messages))
         response.end();
       })
 
@@ -85,13 +85,14 @@ var requestHandler = exports.requestHandler =  function(request, response) {
       messageReceived+= chunk;
       console.log("I GOT HERE2");
       })
-      messages.results.push(JSON.parse(messageReceived));
-      headers['Content-Type'] = "text/plain";
-      response.writeHead(statusCode, headers);
-      console.log("RESPONSE"+JSON.stringify(response));
-      console.log("write is TTTTTT"+response.write);
-      response.write(JSON.stringify(messages))
-      response.end();
+      request.on('end', function(){
+        console.log("MESSAGES.RESULTS BEFORE"+JSON.stringify(messages.results));
+        messages.results.push(JSON.parse(messageReceived));
+        console.log("MESSAGES.RESULTS AFTER"+JSON.stringify(messages.results));
+        headers['Content-Type'] = "text/plain";
+        response.writeHead(statusCode, headers);
+        response.end();
+      })
     }else{
       statusCode=404;
       headers['Content-Type'] = "text/plain";
