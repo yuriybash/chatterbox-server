@@ -12,7 +12,10 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 
-var requestHandler = function(request, response) {
+var requestHandler = exports.requestHandler =  function(request, response) {
+
+  var fs = require("fs");
+
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -29,30 +32,44 @@ var requestHandler = function(request, response) {
   // console.logs in your code.
   console.log("Serving request type " + request.method + " for url " + request.url);
 
-  // The outgoing status.
-  var statusCode = 200;
+  if(request.url=== '/1/classes/chatterbox/?order=-createdAt'){
 
-  // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
+        console.log("your index.html file requested the data located at 127:0:0:1/1/classes/chatterbox ")
 
-  // Tell the client we are sending them plain text.
-  //
-  // You will need to change this if you are sending something
-  // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = "text/plain";
+        // The outgoing status.
+        var statusCode = 200;
 
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
+        // See the note below about CORS headers.
+        var headers = defaultCorsHeaders;
 
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
-  response.end("Hello, World!");
+        // Tell the client we are sending them plain text.
+        //
+        // You will need to change this if you are sending something
+        // other than plain text, like JSON or HTML.
+        headers['Content-Type'] = "text/html";
+
+        // .writeHead() writes to the request line and headers of the response,
+        // which includes the status and all headers.
+        response.writeHead(statusCode,"Everything is totally cool", headers);
+        fs.readFile('../client/index.html', function (err, page) {
+            if (err) {
+                throw err;
+            }
+            console.log(page);
+            response.write(page);
+        });
+        // Make sure to always call response.end() - Node may not send
+        // anything back to the client until you do. The string you pass to
+        // response.end() will be the body of the response - i.e. what shows
+        // up in the browser.
+        //
+        // Calling .end "flushes" the response's internal buffer, forcing
+        // node to actually send all the data over to the client.
+
+        // response.write(html);
+        response.end();
+
+      }
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -64,7 +81,7 @@ var requestHandler = function(request, response) {
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
-var defaultCorsHeaders = {
+var defaultCorsHeaders = exports.defaultCorsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
   "access-control-allow-headers": "content-type, accept",
