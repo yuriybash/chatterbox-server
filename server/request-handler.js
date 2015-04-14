@@ -13,6 +13,7 @@ this file and include it in basic-server.js so that it actually works.
 **************************************************************/
 var messages = {'results': []};
 var fs = require("fs");
+var _ = require("underscore");
 
 var requestHandler = exports.requestHandler =  function(request, response) {
   // Request and Response come from node's http module.
@@ -33,36 +34,56 @@ var requestHandler = exports.requestHandler =  function(request, response) {
   // if(request.method === "GET"){
 
   console.log("Serving request type " + request.method + " for url " + request.url);
+  // Tell the client we are sending them plain text.
+  //
+  // You will need to change this if you are sending something
+  // other than plain text, like JSON or HTML.
+  //#headers['Content-Type'] = "text/JSON";
 
-
+  // Make sure to always call response.end() - Node may not send
+  // anything back to the client until you do. The string you pass to
+  // response.end() will be the body of the response - i.e. what shows
+  // up in the browser.
+  //
+  // Calling .end "flushes" the response's internal buffer, forcing
+  // node to actually send all the data over to the client.
+  var roomMatch =  /\/classes\/room/.exec(request.url)                         //request.url.match("/classes/room");
+  if(roomMatch){
+    var roomNumber = request.url.replace(/\/classes\/room/, "");
+    // console.log("ROOMMATCH.index: "+roomMatch.index + "ROOM NUMBER " + roomNumber + " request.url: "+request.url);
+  }
 
   // The outgoing status.
   var statusCode;
-  console.log("request.url: " + request.url)
-
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
   if (request.method==="GET"){
     statusCode=200;
     if(request.url === '/classes/messages'){
+  // .writeHead() writes to the request line and headers of the response,
+  // which includes the status and all headers.
         headers['Content-Type'] = "text/JSON";
         response.writeHead(statusCode, headers);
-        //console.log("it is expecting: " + JSON.stringify(messages));
-        response.end(JSON.stringify(messages));
+        response.write(JSON.stringify(messages))
+        response.end();
         //REFACTOR FOR OTHER ROOMS
-      } else if(request.url === '/classes/room1'){
+      } else if(roomMatch){
         headers['Content-Type'] = "text/JSON";
         response.writeHead(statusCode, headers);
-        //console.log("MESSAGES.RESULTS.LENGTH"+messages.results.length);
-        response.end(JSON.stringify(messages))
+        var temp = {"results": null};
+        temp["results"] = _.filter(messages["results"], function(elem){
+          return elem.room === roomNumber
+        })
+        response.write(JSON.stringify(temp))
+        response.end();
       } else{
         statusCode=404;
         headers['Content-Type'] = "text/plain";
         response.writeHead(statusCode, headers);
-        response.end(JSON.stringify(messages))
+        response.write(JSON.stringify(messages));
+        response.end();
       }
   } else if (request.method==="POST"){
-    console.log("I GOT HERE1");
     statusCode=201;
     var messageReceived = '';
     if(request.url === ''){
@@ -75,20 +96,17 @@ var requestHandler = exports.requestHandler =  function(request, response) {
         messages.results.push(JSON.parse(messageReceived));
         headers['Content-Type'] = "text/plain";
         response.writeHead(statusCode, headers);
-        // console.log(response);
-        //response.write(JSON.stringify(messages))
         response.end();
       })
 
-    } else if(request.url === '/classes/room1'){
+    } else if(roomMatch){
       request.on('data', function(chunk){
       messageReceived+= chunk;
-      console.log("I GOT HERE2");
       })
       request.on('end', function(){
-        console.log("MESSAGES.RESULTS BEFORE"+JSON.stringify(messages.results));
-        messages.results.push(JSON.parse(messageReceived));
-        console.log("MESSAGES.RESULTS AFTER"+JSON.stringify(messages.results));
+        messageReceived =JSON.parse(messageReceived);
+        messageReceived["room"]=roomNumber;
+        messages.results.push(messageReceived);
         headers['Content-Type'] = "text/plain";
         response.writeHead(statusCode, headers);
         response.end();
@@ -100,84 +118,7 @@ var requestHandler = exports.requestHandler =  function(request, response) {
       response.end(JSON.stringify(messages))
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-  // Tell the client we are sending them plain text.
-  //
-  // You will need to change this if you are sending something
-  // other than plain text, like JSON or HTML.
-  //#headers['Content-Type'] = "text/JSON";
-
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
-  //#response.writeHead(statusCode, headers);
-
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
-  //#response.end("Hello, World!");
 };
-  // }
-  // console.log("Serving request type " + request.method + " for url " + request.url);
-  //   var directory = '../client'+request.url;
-  //   if(directory==="../client/" || directory ==="/classes/messages"){
-  //     directory="../client/index.html"
-  //   }
-
-  //   console.log(request.url);
-
-  //   // The outgoing status.
-  //   var statusCode = 200;
-
-  //   // See the note below about CORS headers.
-  //   var headers = defaultCorsHeaders;
-
-  //   // Tell the client we are sending them plain text.
-  //   //
-  //   // You will need to change this if you are sending something
-  //   // other than plain text, like JSON or HTML.
-  //   headers['Content-Type'] = "text/html";
-
-  //   // .writeHead() writes to the request line and headers of the response,
-  //   // which includes the status and all headers.
-
-  //   response.writeHead(statusCode,"Everything is totally cool", headers);
-  //   fs.readFile(directory, function (err, page) {
-  //       if (err) {
-  //         console.log(directory);
-  //           throw err;
-  //       }
-  //       console.log(page);
-  //       response.write(page);
-  //       response.end();
-  // });
-
-
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
-
-  // response.write(html);
-
-//};
-
 // These headers will allow Cross-Origin Resource Sharing (CORS).
 // This code allows this server to talk to websites that
 // are on different domains, for instance, your chat client.

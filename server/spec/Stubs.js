@@ -14,7 +14,12 @@ module.exports = {
 
     this.end = function(data) {
       this._ended = true;
-      this._data = data;
+      if(data){this._data = data;}
+      //this._data = this._data||data;
+    }.bind(this);
+
+    this.write = function(data){
+        this._data = data
     }.bind(this);
   },
 

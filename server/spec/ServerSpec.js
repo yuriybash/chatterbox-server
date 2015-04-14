@@ -69,7 +69,6 @@ describe('Node Server Request Listener Function', function() {
 
     // Expect 201 Created response status
     expect(res._responseCode).to.equal(201);
-    console.log("res._responseCode: " + res._responseCode)
 
     // Testing for a newline isn't a valid test
     // TODO: Replace with with a valid test
